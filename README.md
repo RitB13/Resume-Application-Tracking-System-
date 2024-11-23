@@ -1,7 +1,9 @@
-# Resume-Application-Tracking-System
+# Resumetrics - Resume-Application-Tracking-System
 
 ## Overview
-Resume ATS Evaluation Tool is a Streamlit app that analyzes resumes against job descriptions using Google's Gemini API. It provides a match percentage, highlights missing keywords, and generates a profile summary. Supports PDF, DOCX, and TXT uploads, with interactive visualizations for ATS-like resume evaluation.
+Resumetrics is an advanced Application Tracking System (ATS) tool powered by Google's Gemini API. It evaluates resumes for alignment with job descriptions, providing percentage matches, identifying missing keywords, and summarizing profiles effectively.
+
+🚀 Live Demo: resumetrics.streamlit.app
 
 ## Features
 - **Resume Parsing:** Upload resumes in PDF, DOCX, or TXT formats and extract the text content.
