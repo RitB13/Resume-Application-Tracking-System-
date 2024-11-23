@@ -68,10 +68,9 @@ st.set_page_config(page_title="SkillSync")
 
 st.markdown("""
     <style>
-        /* Global text styling */
         body, .stApp, .stMarkdown, .stText {
             font-family: 'Times New Roman', Times, serif;
-            color: #F0F0F0;  /* Deep off-white text */
+            color: #F0F0F0;  
         }
         
         /* Title Styling */
@@ -97,18 +96,18 @@ st.markdown("""
     <style>
         body {
             background-color: #003135;  
-            color: #F0F0F0;  /* Deep off-white text */
+            color: #F0F0F0;  
         }
         .stApp {
             background-color: #003135;  
-            color: #F0F0F0;  /* Deep off-white text */
+            color: #F0F0F0;  
         }
         .stButton > button {
-            width: 250px;  /* Larger button size */
-            height: 70px;  /* Larger button size */
-            font-size: 20px;  /* Larger text */
-            margin: auto;  /* Center the button */
-            display: block;  /* Ensure the button is centered */
+            width: 250px;  
+            height: 70px;  
+            font-size: 20px;  
+            margin: auto;  
+            display: block;  
         }
     </style>
 """, unsafe_allow_html=True)
