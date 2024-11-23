@@ -3,7 +3,7 @@
 ## Overview
 Resumetrics is an advanced Application Tracking System (ATS) tool powered by Google's Gemini API. It evaluates resumes for alignment with job descriptions, providing percentage matches, identifying missing keywords, and summarizing profiles effectively.
 
-🚀 Live Demo: resumetrics.streamlit.app
+🚀 Live Demo: https://resumetrics.streamlit.app/
 
 ## Features
 - **Resume Parsing:** Upload resumes in PDF, DOCX, or TXT formats and extract the text content.
