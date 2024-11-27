@@ -224,7 +224,7 @@ if submit:
                 keyword_analysis = f"Identify keywords missing from the resume that are present in the job description."
                 input_prompt_keyword_match = f"{keyword_analysis}\n\nresume: {resume_text}\njob_description: {job_description}"
                 response_keyword_match = get_gemini_response(input_prompt_keyword_match)
-                st.markdown("## Keyword Analysis:")
+                st.markdown("## Missing Keywords:")
                 st.write(response_keyword_match)
 
                 # Skills Match Analysis
