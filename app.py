@@ -1,13 +1,14 @@
 import streamlit as st
 import google.generativeai as genai
 import os
+import re
 import PyPDF2 as pdf
 from docx import Document
 from dotenv import load_dotenv
 import json
 import plotly.graph_objects as go
-import pandas as pd
-#Hi
+import base64
+
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
@@ -63,14 +64,16 @@ I want the response in a structured format:
 {{"JD Match": "%", "MissingKeywords": [], "Profile Summary": ""}}
 """
 
+
 # Streamlit App
 st.set_page_config(page_title="SkillSync")
 
 st.markdown("""
     <style>
+        /* Global text styling */
         body, .stApp, .stMarkdown, .stText {
             font-family: 'Times New Roman', Times, serif;
-            color: #F0F0F0;  
+            color: #F0F0F0;  /* Deep off-white text */
         }
         
         /* Title Styling */
@@ -90,24 +93,60 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+def add_background(image_file):
+    with open(image_file, "rb") as file:
+        encoded_image = base64.b64encode(file.read()).decode()
+    st.markdown(
+        f"""
+        <style>
+        body {{
+            background-image: url(data:image/jpg;base64,{encoded_image});
+            background-size: cover;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-position: center;
+        }}
+        .stApp {{
+            background: transparent;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Add your image here
+add_background("Background.jpg")
+
 # Title for Streamlit app
 st.markdown("<h1>Resume Application Tracking System</h1>", unsafe_allow_html=True)
 st.markdown("""
     <style>
         body {
-            background-color: #003135;  
-            color: #F0F0F0;  
+            color: #F0F0F0;  /* Deep off-white text */
         }
         .stApp {
-            background-color: #003135;  
-            color: #F0F0F0;  
+            color: #F0F0F0;  /* Deep off-white text */
+        }
+        /* Style text labels */
+        label {
+            color: white !important;  /* Set the color to white */
+            font-size: 18px;          /* Adjust font size for better visibility */
+        }
+        .stTextInput > div > div > label, /* For text area label */
+        .stFileUploader > div > div > label, /* For file uploader label */
+        .stButton > button { /* For button text */
+            color: white !important;  /* Set text color to white */
+        }
+        textarea, input[type="file"] {
+            color: white;  /* Set input text color to white */
+            background-color: #333;  /* Dark background for contrast */
         }
         .stButton > button {
-            width: 250px;  
-            height: 70px;  
-            font-size: 20px;  
-            margin: auto;  
-            display: block;  
+            width: 250px;  /* Larger button size */
+            height: 70px;  /* Larger button size */
+            font-size: 20px;  /* Larger text */
+            margin: auto;  /* Center the button */
+            display: block;  /* Ensure the button is centered */
         }
     </style>
 """, unsafe_allow_html=True)
@@ -142,44 +181,80 @@ if submit:
                 response = get_gemini_response(input_prompt_filled)
                 
                 # Parse response
-                response_json = json.loads(response)
-                
-                # Display the Gemini Response in a block format
-                st.markdown("## Response:")
-                
-                # Extract percentage match and missing keywords
+                try:
+                    # Clean response to remove invalid characters
+                    cleaned_response = re.sub(r'[\x00-\x1F\x7F]', '', response)
+                    response_json = json.loads(cleaned_response)
+                except json.JSONDecodeError as e:
+                    st.error("Error parsing the API response. Please try again or check the inputs.")
+                    st.write("Raw Response:", response)
+
+                # Extract percentage match 
                 percentage_match = int(response_json.get("JD Match", "0").strip('%'))
-                missing_keywords = response_json.get("MissingKeywords", [])
                 
                 # Display percentage match
                 st.markdown(f"### Percentage Match: **<span style='font-size: 30px'>{percentage_match}%</span>**", unsafe_allow_html=True)
-                
-                # Display pie chart for percentage match 
+
+                # Display donut chart for percentage match
                 fig = go.Figure(
                     data=[go.Pie(
                         labels=['Match', 'Gap'], 
                         values=[percentage_match, 100 - percentage_match],
-                        marker=dict(line=dict(color="rgba(0,0,0,0)", width=0))  
+                        marker=dict(line=dict(color="rgba(0,0,0,0)", width=0)),
+                        hole=0.4  # Create a donut chart with a hole in the center
                     )],
                     layout=dict(
                         margin=dict(t=0, b=0, l=0, r=0),  
-                        paper_bgcolor='#003135',  
-                        plot_bgcolor='#003135',  
-                        height=300  
+                        paper_bgcolor='rgba(0, 0, 0, 0)',  # Transparent background
+                        plot_bgcolor='rgba(0, 0, 0, 0)',   # Transparent plot area
+                        height=300  # Adjust height as needed
                     )
                 )
 
-                st.plotly_chart(fig)
+                # Add customization to make the chart visually appealing
+                fig.update_traces(
+                    textinfo='label+percent',  # Show both label and percentage
+                    hoverinfo='label+percent',  # Information on hover
+                    marker=dict(colors=['#041E42', '#5F9EA0'], line=dict(color='#000000', width=1))  
+                )
 
-                # Display missing keywords as a simple list
-                if missing_keywords:
-                    st.markdown("### Missing Keywords:")
-                    for keyword in missing_keywords:
-                        st.write(f"- {keyword}")
-                
-                st.markdown("### Profile Summary:")
-                st.write(response_json.get("Profile Summary", "No profile summary available."))
-            
+                st.plotly_chart(fig, use_container_width=True)  # Adjust container width to match Streamlit's layout
+
+                # Keyword Analysis
+                keyword_analysis = f"Identify keywords missing from the resume that are present in the job description."
+                input_prompt_keyword_match = f"{keyword_analysis}\n\nresume: {resume_text}\njob_description: {job_description}"
+                response_keyword_match = get_gemini_response(input_prompt_keyword_match)
+                st.markdown("## Keyword Analysis:")
+                st.write(response_keyword_match)
+
+                # Skills Match Analysis
+                prompt_skills_match = f"Please compare the skills in the resume to the job description."
+                input_prompt_skills_match = f"{prompt_skills_match}\n\nresume: {resume_text}\njob_description: {job_description}"
+                response_skills_match = get_gemini_response(input_prompt_skills_match)
+                st.markdown("## Skills Match Analysis:")
+                st.write(response_skills_match)
+
+                # General Resume-Job Description Matching
+                prompt_summary = f"Write the Profile Summary and suggest improvements."
+                input_prompt_summary = f"{prompt_summary}\n\nresume: {resume_text}\njob_description: {job_description}"
+                response_summary = get_gemini_response(input_prompt_summary)
+                st.markdown("## Profile Summary:")
+                st.write(response_summary)
+
+                # Grammar and Formatting Check
+                grammar = f"Review the grammar and formatting of the resume."
+                input_prompt_grammar = f"{grammar}\n\nresume: {resume_text}\njob_description: {job_description}"
+                response_grammar = get_gemini_response(input_prompt_grammar)
+                st.markdown("## Grammar and Formatting Check:")
+                st.write(response_grammar)
+
+                # Tone and Language
+                tone_lang = f"Evaluate the tone and language of the resume for alignment with the job description"
+                input_prompt_tone_lang = f"{tone_lang}\n\nresume: {resume_text}\njob_description: {job_description}"
+                response_tone = get_gemini_response(input_prompt_tone_lang)
+                st.markdown("## Tone and Language:")
+                st.write(response_tone)
+           
         except Exception as e:
             st.error(f"Error: {str(e)}")
     else:
