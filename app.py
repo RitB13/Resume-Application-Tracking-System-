@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import json
 import plotly.graph_objects as go
 import base64
-
+import time
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
@@ -34,7 +34,6 @@ def input_docx_text(uploaded_file):
     for paragraph in doc.paragraphs:
         text += paragraph.text + "\n"
     return text
-
 # Extract text from uploaded TXT file
 def input_txt_text(uploaded_file):
     return uploaded_file.read().decode("utf-8")
@@ -63,9 +62,6 @@ job_description: {job_description}
 I want the response in a structured format:
 {{"JD Match": "%", "MissingKeywords": [], "Profile Summary": ""}}
 """
-
-
-# Streamlit App
 st.set_page_config(page_title="SkillSync")
 
 st.markdown("""
@@ -93,29 +89,38 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-def add_background(image_file):
-    with open(image_file, "rb") as file:
-        encoded_image = base64.b64encode(file.read()).decode()
+# Function to add a custom background image
+def add_bg_from_local(image_file):
+    with open(image_file, "rb") as image:
+        encoded_image = base64.b64encode(image.read()).decode()
     st.markdown(
         f"""
         <style>
-        body {{
-            background-image: url(data:image/jpg;base64,{encoded_image});
-            background-size: cover;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-            background-position: center;
-        }}
         .stApp {{
-            background: transparent;
+            background-image: url(data:image/{"jpg"};base64,{encoded_image});
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }}
         </style>
         """,
         unsafe_allow_html=True
     )
 
-# Add your image here
-add_background("Background.jpg")
+# Call the function with your image file
+add_bg_from_local('Background.jpg')  
+
+# Read the CSS file for additional styling
+with open("style.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    
+
+# Streamlit app layout with a title and company name
+st.markdown("<div class='title'> <span> HUBNEX LABS - SCORE MY RESUME </span> </div>", unsafe_allow_html=True)
+
+st.markdown("<div class='subtitle'>How good is your resume? </div>", unsafe_allow_html=True)
+
+st.markdown("<div class='subtitle'>Find out instantly. Upload your resume and our free resume scanner will evaluate it against key criteria hiring managers and applicant tracking systems (ATS) look for. Get actionable feedback on how to improve your resume's success rate.</div>", unsafe_allow_html=True)
 
 # Title for Streamlit app
 st.markdown("<h1>Resume Application Tracking System</h1>", unsafe_allow_html=True)
@@ -152,13 +157,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Text area for job description input
-job_description = st.text_area("Paste the Job Description:")
+job_description = st.text_area("Paste the Job Description:", key="input", help="Paste the job description here to match with your resume.")
 
 # File uploader for resume input
-uploaded_file = st.file_uploader("Upload Your Resume (PDF, DOCX, TXT)...", type=["pdf", "docx", "txt"])
+uploaded_file = st.file_uploader("Upload Your Resume", type=["pdf", "docx", "txt"],  help="Upload your resume in PDF, DOCX or TEXT format.")
 
 # Submit button 
-submit = st.button("Submit")
+submit = st.button("Evaluate Resume", key="submit")
 
 if submit:
     if uploaded_file is not None:
@@ -218,7 +223,7 @@ if submit:
                     marker=dict(colors=['#041E42', '#5F9EA0'], line=dict(color='#000000', width=1))  
                 )
 
-                st.plotly_chart(fig, use_container_width=True)  # Adjust container width to match Streamlit's layout
+                st.plotly_chart(fig, use_container_width=True,)  # Adjust container width to match Streamlit's layout
 
                 # Keyword Analysis
                 keyword_analysis = f"Identify keywords missing from the resume that are present in the job description."
@@ -254,8 +259,52 @@ if submit:
                 response_tone = get_gemini_response(input_prompt_tone_lang)
                 st.markdown("## Tone and Language:")
                 st.write(response_tone)
-           
+                
+                
         except Exception as e:
             st.error(f"Error: {str(e)}")
     else:
         st.warning("Please upload a resume.")
+          
+# Custom Footer with additional styling
+footer = """
+<style>
+a:link, a:visited{
+    color: yellow;
+    background-color: transparent;
+    text-decoration: underline;
+}
+
+a:hover, a:active {
+    color: red;
+    background-color: transparent;
+    text-decoration: underline;
+}
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+}
+
+.footer a {
+    color: #ffcc00;
+    font-weight: bold;
+}
+
+.footer a:hover {
+    color: #ff6600;
+}
+</style>
+<div class="footer">
+    <p>Powered by HUBNEX LABS | <a href="https://www.hubnex.in/" target="_blank">HUBNEX LABS</a></p>
+</div>
+"""
+st.markdown(footer, unsafe_allow_html=True)
