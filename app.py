@@ -3,7 +3,7 @@ import google.generativeai as genai
 import os
 import re
 import PyPDF2 as pdf
-import docx2txt
+from docx import Document
 from dotenv import load_dotenv
 import json
 import plotly.graph_objects as go
@@ -103,7 +103,12 @@ def input_pdf_text(uploaded_file):
 
 # Extract text from uploaded DOCX file
 def input_docx_text(uploaded_file):
-    return docx2txt.process(uploaded_file)
+    doc = Document(uploaded_file)
+    text = ""
+    for paragraph in doc.paragraphs:
+        text += paragraph.text + "\n"
+    return text
+    
 # Extract text from uploaded TXT file
 def input_txt_text(uploaded_file):
     return uploaded_file.read().decode("utf-8")
