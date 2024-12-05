@@ -92,6 +92,11 @@ add_bg_from_local('Background.jpg')  # Use a high-quality background image
 with open("style.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
+# Function to get current date in the desired format
+def get_current_date():
+    Date = datetime.now().strftime('%B %d, %Y')  # Example: "December 05, 2024"
+    return Date
+
 # Extract text from uploaded PDF file
 def input_pdf_text(uploaded_file):
     reader = pdf.PdfReader(uploaded_file)
@@ -148,7 +153,20 @@ job_description: {job_description}
 I want the response in a structured format:
 {{"JD Match": "%", "MissingKeywords": [], "Profile Summary": ""}}
 """
-
+tenure_prompt = """Analyze the **Professional Work Experience** section of the resume, focusing exclusively on organizational-level roles (jobs held in formal organizations, excluding internships or non-organizational experiences).
+For each organizational role, extract the following details:.
+- **Duration of Employment**: Start and end dates, or the total duration in months/years. If a role is ongoing, calculate the duration up to today's date.
+- **Gaps Between Roles**: Any periods of unemployment between consecutive organizational roles, with their durations.
+Based on this data, provide:
+1. **Average Tenure per Job**: Calculate the average time the employee spent in each organizational role.
+2. **Career Timeline**: Summarize the total time spent in formal organizational roles, including any ongoing roles calculated up to today's date.
+3. **Patterns and Insights**: Identify trends such as:
+   - Consistency in tenure across roles.
+   - Significant variations in job durations.
+   - Gaps in employment and their potential implications.
+Ensure the analysis is based only on the **Professional Work Experience** section of the resume. Ignore any unrelated sections or informal experiences.
+Resume: {text}
+"""
 
 def clean_response(response):
     """Clean and parse the response from the Gemini API."""
@@ -267,6 +285,15 @@ if submit:
                         </div>
                         """, unsafe_allow_html=True)
                     st.plotly_chart(render_pie_chart(percentage_match), use_container_width=True)
+                    # Tenure analysis
+                    st.markdown("""
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <i style="font-size: 20px; margin-right: 10px; color: #4CAF50;">📅</i>
+                            <h3 style="display: inline; margin: 0; color: #4CAF50;">Tenure Analysis</h3>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    tenure_analysis_response = get_gemini_response(tenure_prompt.format(text=resume_text))
+                    st.write(tenure_analysis_response)
                     
                     # Detailed analysis sections
                     st.markdown("""
@@ -317,10 +344,10 @@ if submit:
     else:
         st.warning("Please upload a resume file.")
           
-# Custom Footer with additional styling
-footer = """
+# Custom Footer with date and additional styling
+footer = f"""
 <style>
-.footer {
+.footer {{
     position: fixed;
     left: 0;
     bottom: 0;
@@ -329,21 +356,36 @@ footer = """
     color: white;
     text-align: center;
     padding: 10px 0;
-}
-.footer a {
+}}
+
+.footer-left {{
+    position: fixed;
+    left: 10px;
+    bottom: 10px;
+    color: white;
+    font-size: 14px;
+}}
+
+.footer a {{
     color: #FFFFFF;
     text-decoration: none;
     font-weight: bold;
     margin: 0 15px;
-}
-.footer a:hover {
+}}
+
+.footer a:hover {{
     text-decoration: underline;
     color: #DFF6DD;
-}
+}}
 </style>
 <div class="footer">
     <p>Powered by <a href="https://www.hubnex.in/" target="_blank">HUBNEX LABS</a> | Follow us on 
-    <a href="https://www.linkedin.com/company/hubnex/" target="_blank">LinkedIn</a> |
-    <a href="https://github.com/RitB13" target="_blank">GitHub</a></p>
-</div>"""
+    <a href="https://www.linkedin.com/in/vishwajit-singh-69175319b" target="_blank">LinkedIn</a> |
+    <a href="https://github.com/VishuS1304" target="_blank">GitHub</a></p>
+</div>
+<div class="footer-left">
+    <p>{get_current_date()}</p>  <!-- Display current date -->
+</div>
+"""
+
 st.markdown(footer, unsafe_allow_html=True)
